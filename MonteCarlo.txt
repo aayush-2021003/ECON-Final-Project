@@ -1,0 +1,68 @@
+install.packages("pacman")
+pacman::p_load(data.table, fixest, stargazer, dplyr, margittr)
+
+library(data.table)
+library(stargazer)
+library(fixest)
+library(dplyr)
+library(magrittr)
+
+df<-data_assgn_final_data
+
+df <- df[complete.cases(df$SDP), ]
+
+scaled=c()
+for (i in 1:nrow(df)){
+  scaled[i]=df$SDP[i]/1000
+}
+df$SDPscaled<-scaled
+
+
+model <- lm(year_state_GWL ~ SDPscaled, data = df)
+
+summary(model)
+
+beta_0 <- 8.6138514
+beta_1 <- -0.0025273
+standard_dev <- 4.494
+standard_dev
+
+X_mean=mean(df$SDPscaled)
+X_mean
+X_sd=sd(df$SDPscaled)
+X_sd
+
+set.seed(1)
+N=5
+M=500
+
+slope_DT=rep(0, 500)
+intercept_DT=rep(0, 500)
+
+X_i=sample(df$SDPscaled, N)
+for (i in 1:M){
+  U_i=rnorm(N, mean=0, sd=standard_dev)
+  Y_i=beta_0+beta_1*X_i+U_i
+  data_i=data.table(Y=Y_i, X=X_i)
+  data_i
+  ols_i=fixest::feols(data=data_i, Y~X)
+  slope_DT[i]<-ols_i$coefficients[2]
+  intercept_DT[i]<-ols_i$coefficients[1]
+}
+
+
+estimated_DT<-data.table(beta_1=slope_DT, beta_0=intercept_DT)
+stargazer(estimated_DT[, c("beta_1", "beta_0")], type="text")
+
+hist(estimated_DT[, beta_1])
+
+
+
+
+
+
+
+
+
+
+
