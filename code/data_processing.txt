@@ -1,0 +1,128 @@
+#Run Regression\
+install.packages("lmtest")
+library(lmtest)
+library(stargazer)
+
+
+df<-power_control_merged_df
+
+df <- subset(df, select = -Gini)
+
+df <- df[complete.cases(df$SDP), ]
+
+scaled=c()
+for (i in 1:nrow(df)){
+  scaled[i]=df$SDP[i]/1000
+}
+df$SDPscaled<-scaled
+
+
+df$SDPscaled2<-df$SDPscaled^2
+df$SDPscaled3<-df$SDPscaled^3
+
+
+nrow(df)
+df <- na.omit(df)
+nrow(df)
+
+regression_result<-lm(formula=year_state_GWL~SDPscaled+SDPscaled2+SDPscaled3+StateGini+election_margin+party_count+population_density+percent_women_elected+rainfall, data=df)
+
+summary(regression_result)
+
+model <- glm(year_state_GWL~SDPscaled+SDPscaled2+SDPscaled3+StateGini+election_margin+party_count+population_density+percent_women_elected+rainfall, data = df, family = gaussian(link = "identity"))
+
+summary(model)
+
+# Load data
+data<-df
+
+model <- lm(year_state_GWL~SDPscaled+SDPscaled2+SDPscaled3+StateGini+election_margin+party_count+population_density+percent_women_elected+rainfall, data = data)
+
+
+# Define log-likelihood function
+logLikelihood_lm <- function(beta, data) {
+  # Extract variables from data
+  X <- data[, c("SDPscaled", "SDPscaled2", "SDPscaled3", "StateGini", "election_margin", "party_count", "population_density", "percent_women_elected", "rainfall")]
+  y <- data$year_state_GWL
+  
+  # Calculate linear predictor and residuals
+  mu <- predict(model, newdata = df)
+  epsilon <- y - mu
+  
+  # Calculate log-likelihood
+  n <- length(y)
+  sigma <- exp(beta[length(beta)]) # transform last parameter to ensure positivity
+  logLik <- -n/2*log(2*pi*sigma^2) - sum(epsilon^2)/(2*sigma^2)
+  
+  return(-logLik)
+}
+
+# Set starting values for coefficients
+
+startValues <- c(coef(model)[-1], log(sd(resid(model))))
+
+# Use maximum likelihood estimation to estimate coefficients assuming a normal distribution
+fit_lm <- optim(par = startValues, fn = logLikelihood_lm, data = df, method = "BFGS")
+
+# Print estimated coefficients
+coef_lm <- c(fit_lm$par[1:9], exp(fit_lm$par[10])) # transform last parameter back to original scale
+names(coef_lm) <- c("SDPscaled", "SDPscaled2", "SDPscaled3", "StateGini", "election_margin", "party_count", "population_density", "percent_women_elected", "rainfall", "sigma")
+print(coef_lm)
+
+
+bptest(model)
+
+# Define log-likelihood function assuming gamma distribution
+logLikelihood_gamma <- function(beta, data) {
+  # Extract variables from data
+  X <- data[, c("SDPscaled", "SDPscaled2", "SDPscaled3", "StateGini", "election_margin", "party_count", "population_density", "percent_women_elected", "rainfall")]
+  y <- data$year_state_GWL
+  
+  # Calculate linear predictor and residuals
+  mu <- predict(model, newdata = df)
+  epsilon <- y - mu
+  
+  # Calculate log-likelihood
+  n <- length(y)
+  alpha <- exp(beta[length(beta)-1]) # transform second-to-last parameter to ensure positivity
+  lambda <- exp(beta[length(beta)]) # transform last parameter to ensure positivity
+  logLik <- sum(dgamma(y, shape = alpha, rate = lambda, log = TRUE))
+  
+  return(-logLik)
+}
+
+# Set starting values for coefficients
+startValues <- c(coef(model)[-1], log(mean(resid(model))^2))
+
+# Use maximum likelihood estimation to estimate coefficients assuming a gamma distribution
+fit_gamma <- optim(par = startValues, fn = logLikelihood_gamma, data = df, method = "BFGS")
+
+# Print estimated coefficients
+coef_gamma <- c(fit_gamma$par[1:9], exp(fit_gamma$par[10]), exp(fit_gamma$par[11]))
+names(coef_gamma) <- c("SDPscaled", "SDPscaled2", "SDPscaled3", "StateGini", "election_margin", "party_count", "population_density", "percent_women_elected", "rainfall", "alpha", "lambda")
+print(coef_gamma)
+
+# Run Breusch-Pagan test for heteroskedasticity
+bptest(model)
+
+model <- lm(year_state_GWL~SDPscaled+SDPscaled2+SDPscaled3+StateGini+election_margin+party_count+population_density+percent_women_elected+rainfall, data = data)
+
+u_hat<-resid(model)
+
+log_u_hat_sqr<-log((u_hat)^2)
+
+reg_u_hat <- lm(log_u_hat_sqr ~ SDPscaled+SDPscaled2+SDPscaled3+StateGini+election_margin+party_count+population_density+percent_women_elected+rainfall, data = data)
+
+g_hat <- fitted(reg_u_hat)
+
+h_hat <- exp(g_hat)
+
+w <- 1/h_hat
+
+model_fgls <- lm(year_state_GWL~SDPscaled+SDPscaled2+SDPscaled3+StateGini+election_margin+party_count+population_density+percent_women_elected+rainfall, data = data, weight=w)
+
+stargazer(model, model_fgls, column.labels=c("OLS S.E", "FGLS"), type="text", keep.stat=c("n", "rsq"))
+
+bptest(model_fgls)
+summary(model_fgls)
+

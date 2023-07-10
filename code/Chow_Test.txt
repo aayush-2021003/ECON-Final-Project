@@ -1,0 +1,145 @@
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("tidyverse")
+install.packages("strucchange")
+install.packages("sandwich")
+install.packages("gap")
+install.packages("lmtest")
+
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(strucchange)
+library(sandwich)
+library(gap)
+library(lmtest)
+
+
+#Q4
+#fetching data
+merged_data <- read.csv("C:/Users/priya_5c9gi56/Downloads/power_control_merged_df.csv")
+merged_data<-subset(merged_data,select=-c(Gini))
+
+#creating dummy variables
+merged_data$Dsouth<-ifelse(merged_data$State=="puducherry"|merged_data$State=="andhra pradesh"|merged_data$State=="tamil nadu"|merged_data$State=="kerala"|merged_data$State=="telangana",1,0)
+merged_data$Dnorth<-ifelse(merged_data$State=="chandigarh"|merged_data$State=="jammu and kashmir"|merged_data$State=="himachal pradesh"|merged_data$State=="delhi"|merged_data$State=="punjab"|merged_data$State=="haryana"|merged_data$State=="uttarakhand"|merged_data$State=="rajasthan",1,0)
+merged_data$Deast<-ifelse(merged_data$State=="meghalaya"|merged_data$State=="bihar"|merged_data$State=="arunachal pradesh"|merged_data$State=="assam"|merged_data$State=="manipur"|merged_data$State=="tripura"|merged_data$State=="sikkim"|merged_data$State=="west bengal"|merged_data$State=="odisha",1,0)
+merged_data$Dwest<-ifelse(merged_data$State=="nagaland"|merged_data$State=="goa"|merged_data$State=="gujarat"|merged_data$State=="maharashtra"|merged_data$State=="karnataka",1,0)
+merged_data$Dcentre<-ifelse(merged_data$State=="chhattisgarh"|merged_data$State=="madhya pradesh"|merged_data$State=="uttar pradesh"|merged_data$State=="chattisgarh"|merged_data$State=="jharkhand",1,0)
+
+#subset data
+southreg<-merged_data%>%filter(Dsouth==1)
+northreg<-merged_data%>%filter(Dnorth==1)
+eastreg<-merged_data%>%filter(Deast==1)
+westreg<-merged_data%>%filter(Dwest==1)
+centrereg<-merged_data%>%filter(Dcentre==1)
+
+
+#converting the data into the matrices
+southxmat<-as.matrix(southreg[,7:14])
+southymat<-as.matrix(southreg[,9])
+southxmat[is.na(southxmat)]<-1
+
+northxmat<-as.matrix(northreg[,7:14])
+northymat<-as.matrix(northreg[,9])
+northxmat[is.na(northxmat)]<-1
+
+eastxmat<-as.matrix(eastreg[,7:14])
+eastymat<-as.matrix(eastreg[,9])
+eastxmat[is.na(eastxmat)]<-1
+
+
+
+westxmat<-as.matrix(westreg[,7:14])
+westymat<-as.matrix(westreg[,9])
+westxmat[is.na(westxmat)]<-1
+
+
+centrexmat<-as.matrix(centrereg[,7:14])
+centreymat<-as.matrix(centrereg[,9])
+centrexmat[is.na(centrexmat)]<-1
+
+#accounting multicollinearity
+
+eastxmat<-eastxmat[,-3]
+northxmat<-northxmat[,-3]
+southxmat<-southxmat[,-3]
+centrexmat<-centrexmat[,-3]
+westxmat<-westxmat[,-3]
+
+eastxmat<-eastxmat[,-3]
+northxmat<-northxmat[,-3]
+southxmat<-southxmat[,-3]
+centrexmat<-centrexmat[,-3]
+westxmat<-westxmat[,-3]
+
+eastxmat<-eastxmat[,-3]
+northxmat<-northxmat[,-3]
+southxmat<-southxmat[,-3]
+centrexmat<-centrexmat[,-3]
+westxmat<-westxmat[,-3]
+
+eastxmat<-eastxmat[,-4]
+northxmat<-northxmat[,-4]
+southxmat<-southxmat[,-4]
+centrexmat<-centrexmat[,-4]
+westxmat<-westxmat[,-4]
+
+
+southxmat<-cbind(southxmat,southxmat[,1]^2)
+northxmat<-cbind(northxmat,northxmat[,1]^2)
+westxmat<-cbind(westxmat,westxmat[,1]^2)
+eastxmat<-cbind(eastxmat,eastxmat[,1]^2)
+centrexmat<-cbind(centrexmat,centrexmat[,1]^2)
+
+southxmat<-cbind(southxmat,southxmat[,1]^3)
+northxmat<-cbind(northxmat,northxmat[,1]^3)
+westxmat<-cbind(westxmat,westxmat[,1]^3)
+eastxmat<-cbind(eastxmat,eastxmat[,1]^3)
+centrexmat<-cbind(centrexmat,centrexmat[,1]^3)
+
+
+
+chow.test(southymat,southxmat,northymat,northxmat)
+chow.test(southymat,southxmat,eastymat,eastxmat)
+chow.test(southymat,southxmat,westymat,westxmat)
+chow.test(eastymat,eastxmat,northymat,northxmat)
+chow.test(westymat,westxmat,northymat,northxmat)
+chow.test(southymat,southxmat,centreymat,centrexmat)
+chow.test(centreymat,centrexmat,northymat,northxmat)
+chow.test(eastymat,eastxmat,westymat,westxmat)
+chow.test(eastymat,eastxmat,centreymat,centrexmat)
+chow.test(westymat,westxmat,centreymat,centrexmat)
+
+
+#t-test
+t.test(southymat,northymat)
+t.test(southymat,eastymat)
+t.test(southymat,westymat)
+t.test(southymat,centreymat)
+t.test(eastymat,northymat)
+t.test(westymat,northymat)
+t.test(centreymat,northymat)
+t.test(eastymat,westymat)
+t.test(eastymat,centreymat)
+t.test(westymat,centreymat)
+
+#q7
+merged_data <- read.csv("C:/Users/priya_5c9gi56/Downloads/power_control_merged_df.csv")
+merged_data<-na.omit(merged_data)
+
+merged_data$statevar<-ifelse(merged_data$State=="puducherry"|merged_data$State=="andhra pradesh"|merged_data$State=="tamil nadu"|merged_data$State=="kerala"|merged_data$State=="telangana",1,0)
+merged_data$statevar<-ifelse(merged_data$State=="chandigarh"|merged_data$State=="jammu and kashmir"|merged_data$State=="himachal pradesh"|merged_data$State=="delhi"|merged_data$State=="punjab"|merged_data$State=="haryana"|merged_data$State=="uttarakhand"|merged_data$State=="rajasthan",2,merged_data$statevar)
+merged_data$statevar<-ifelse(merged_data$State=="meghalaya"|merged_data$State=="bihar"|merged_data$State=="arunachal pradesh"|merged_data$State=="assam"|merged_data$State=="manipur"|merged_data$State=="tripura"|merged_data$State=="sikkim"|merged_data$State=="west bengal"|merged_data$State=="odisha",3,merged_data$statevar)
+merged_data$statevar<-ifelse(merged_data$State=="nagaland"|merged_data$State=="goa"|merged_data$State=="gujarat"|merged_data$State=="maharashtra"|merged_data$State=="karnataka",4,merged_data$statevar)
+merged_data$statevar<-ifelse(merged_data$State=="chhattisgarh"|merged_data$State=="madhya pradesh"|merged_data$State=="uttar pradesh"|merged_data$State=="chattisgarh"|merged_data$State=="jharkhand",5,merged_data$statevar)
+
+
+regmodel<-lm(merged_data$year_state_GWL~merged_data$SDP+merged_data$SDP^2+merged_data$SDP^3+merged_data$StateGini+merged_data$party_count+merged_data$election_margin+merged_data$percent_women_elected+merged_data$population_density+merged_data$rainfall+merged_data$statevar,data=merged_data)
+
+resid<-residuals(regmodel)
+resid_sq<-resid^2
+bptest(formula = regmodel,varformula = ~merged_data$statevar,data=merged_data)
+
+
+
