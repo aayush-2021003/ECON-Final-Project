@@ -20,29 +20,29 @@ relationship between income and power inequality
 and groundwater levels.
 
 ### Libraries Used
-dplyr
-ggplot2
-tidyverse
-strucchange
-sandwich
-gap
-lmtest
-stargazer
-data.table
-fixest
-magrittr
+- dplyr
+- ggplot2
+- tidyverse
+- strucchange
+- sandwich
+- gap
+- lmtest
+- stargazer
+- data.table
+- fixest
+- magrittr
 
 ### Data Sets Descrption
 - The repository includes the following datasets:
 
-Groundwater level: Contains data on groundwater level.
-Election Margin: Contains data on election margin.
-Party Count: Contains data on the count of distinct parties.
-Percent Women Elected: Contains data on the percentage of women elected
-Telecom: Contains data on telecommunications.
-Gini: Contains data on the Gini index.
-Population Density: Contains population density data.
-SDP: Contains state domestic product data
+- Groundwater level: Contains data on groundwater level.
+- Election Margin: Contains data on election margin.
+- Party Count: Contains data on the count of distinct parties.
+- Percent Women Elected: Contains data on the percentage of women elected
+- Telecom: Contains data on telecommunications.
+- Gini: Contains data on the Gini index.
+- Population Density: Contains population density data.
+- SDP: Contains state domestic product data
 
 ### Variables
 - Groundwater Level: It is measured as the 
